@@ -1,3 +1,9 @@
+
+
+
+
+
+
 service: notes-api
 
 frameworkVersion: '2'
@@ -11,13 +17,15 @@ provider:
 
 
 functions:
+ 
   createNote:
     handler: handler.createNote
     events:
       - http:
-        method: post
-        path: notes
-    
+          method: post
+          path: notes
+
+
 
 # you can add CloudFormation resource templates here
 #resources:

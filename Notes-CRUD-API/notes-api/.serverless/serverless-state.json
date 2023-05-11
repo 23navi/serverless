@@ -174,7 +174,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/notes-api/dev/1683811601429-2023-05-11T13:26:41.429Z/notes-api.zip"
+                "S3Key": "serverless/notes-api/dev/1683812443513-2023-05-11T13:40:43.513Z/notes-api.zip"
               },
               "Handler": "handler.createNote",
               "Runtime": "nodejs12.x",
@@ -192,14 +192,136 @@
               "CreateNoteLogGroup"
             ]
           },
-          "CreateNoteLambdaVersionZ9bxIYnYC0pguFQkJ7pMdkpQXh4P9dbxpcCFwAebXHQ": {
+          "CreateNoteLambdaVersion3zuZ5RSUjUwHrAbM5m1MbaOjPblQ57zgpWd7im76kBQ": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "CreateNoteLambdaFunction"
               },
-              "CodeSha256": "UtvOWgHdCmk9m47Dx2nAkKVTGyBJkavsnURU7fSjKXY="
+              "CodeSha256": "TIzKTfssHkOICsPkdhwU4d8bDSuremdstvRraptM8j4="
+            }
+          },
+          "ApiGatewayRestApi": {
+            "Type": "AWS::ApiGateway::RestApi",
+            "Properties": {
+              "Name": "dev-notes-api",
+              "EndpointConfiguration": {
+                "Types": [
+                  "EDGE"
+                ]
+              },
+              "Policy": ""
+            }
+          },
+          "ApiGatewayResourceNotes": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+              "ParentId": {
+                "Fn::GetAtt": [
+                  "ApiGatewayRestApi",
+                  "RootResourceId"
+                ]
+              },
+              "PathPart": "notes",
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              }
+            }
+          },
+          "ApiGatewayMethodNotesPost": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+              "HttpMethod": "POST",
+              "RequestParameters": {},
+              "ResourceId": {
+                "Ref": "ApiGatewayResourceNotes"
+              },
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "ApiKeyRequired": false,
+              "AuthorizationType": "NONE",
+              "Integration": {
+                "IntegrationHttpMethod": "POST",
+                "Type": "AWS_PROXY",
+                "Uri": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":apigateway:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":lambda:path/2015-03-31/functions/",
+                      {
+                        "Fn::GetAtt": [
+                          "CreateNoteLambdaFunction",
+                          "Arn"
+                        ]
+                      },
+                      "/invocations"
+                    ]
+                  ]
+                }
+              },
+              "MethodResponses": []
+            },
+            "DependsOn": [
+              "CreateNoteLambdaPermissionApiGateway"
+            ]
+          },
+          "ApiGatewayDeployment1683812442628": {
+            "Type": "AWS::ApiGateway::Deployment",
+            "Properties": {
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "StageName": "dev"
+            },
+            "DependsOn": [
+              "ApiGatewayMethodNotesPost"
+            ]
+          },
+          "CreateNoteLambdaPermissionApiGateway": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "CreateNoteLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "apigateway.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":execute-api:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":",
+                    {
+                      "Ref": "ApiGatewayRestApi"
+                    },
+                    "/*/*"
+                  ]
+                ]
+              }
             }
           }
         },
@@ -215,10 +337,36 @@
           "CreateNoteLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "CreateNoteLambdaVersionZ9bxIYnYC0pguFQkJ7pMdkpQXh4P9dbxpcCFwAebXHQ"
+              "Ref": "CreateNoteLambdaVersion3zuZ5RSUjUwHrAbM5m1MbaOjPblQ57zgpWd7im76kBQ"
             },
             "Export": {
               "Name": "sls-notes-api-dev-CreateNoteLambdaFunctionQualifiedArn"
+            }
+          },
+          "ServiceEndpoint": {
+            "Description": "URL of the service endpoint",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  "https://",
+                  {
+                    "Ref": "ApiGatewayRestApi"
+                  },
+                  ".execute-api.",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  ".",
+                  {
+                    "Ref": "AWS::URLSuffix"
+                  },
+                  "/dev"
+                ]
+              ]
+            },
+            "Export": {
+              "Name": "sls-notes-api-dev-ServiceEndpoint"
             }
           }
         }
@@ -313,9 +461,11 @@
         "handler": "handler.createNote",
         "events": [
           {
-            "method": "post",
-            "path": "notes",
-            "http": null
+            "http": {
+              "method": "post",
+              "path": "notes",
+              "integration": "AWS_PROXY"
+            }
           }
         ],
         "name": "notes-api-dev-createNote",
@@ -324,7 +474,7 @@
         "timeout": 6,
         "runtime": "nodejs12.x",
         "vpc": {},
-        "versionLogicalId": "CreateNoteLambdaVersionZ9bxIYnYC0pguFQkJ7pMdkpQXh4P9dbxpcCFwAebXHQ"
+        "versionLogicalId": "CreateNoteLambdaVersion3zuZ5RSUjUwHrAbM5m1MbaOjPblQ57zgpWd7im76kBQ"
       }
     },
     "configValidationMode": "warn",
@@ -343,10 +493,10 @@
     },
     "layers": {},
     "isDashboardMonitoringPreconfigured": false,
-    "artifact": "/Users/navi/Desktop/DEVELOPMENT/Serverless-notes/Notes-CRUD-API/notes/.serverless/notes-api.zip"
+    "artifact": "/Users/navi/Desktop/DEVELOPMENT/Serverless-notes/Notes-CRUD-API/notes-api/.serverless/notes-api.zip"
   },
   "package": {
-    "artifactDirectoryName": "serverless/notes-api/dev/1683811601429-2023-05-11T13:26:41.429Z",
+    "artifactDirectoryName": "serverless/notes-api/dev/1683812443513-2023-05-11T13:40:43.513Z",
     "artifact": "notes-api.zip"
   }
 }
