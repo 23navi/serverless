@@ -77,6 +77,12 @@
         "LogGroupName": "/aws/lambda/notes-api-dev-createNote"
       }
     },
+    "UpdateNoteLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/notes-api-dev-updateNote"
+      }
+    },
     "IamRoleLambdaExecution": {
       "Type": "AWS::IAM::Role",
       "Properties": {
@@ -161,7 +167,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/notes-api/dev/1683812443513-2023-05-11T13:40:43.513Z/notes-api.zip"
+          "S3Key": "serverless/notes-api/dev/1683813068720-2023-05-11T13:51:08.720Z/notes-api.zip"
         },
         "Handler": "handler.createNote",
         "Runtime": "nodejs12.x",
@@ -179,14 +185,49 @@
         "CreateNoteLogGroup"
       ]
     },
-    "CreateNoteLambdaVersion3zuZ5RSUjUwHrAbM5m1MbaOjPblQ57zgpWd7im76kBQ": {
+    "UpdateNoteLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/notes-api/dev/1683813068720-2023-05-11T13:51:08.720Z/notes-api.zip"
+        },
+        "Handler": "handler.updateNote",
+        "Runtime": "nodejs12.x",
+        "FunctionName": "notes-api-dev-updateNote",
+        "MemorySize": 1024,
+        "Timeout": 6,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "UpdateNoteLogGroup"
+      ]
+    },
+    "CreateNoteLambdaVersionuKEfwKUAF3m2JgzEcJVfmVVjSKUSelYkEo3GFxNMQ": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "CreateNoteLambdaFunction"
         },
-        "CodeSha256": "TIzKTfssHkOICsPkdhwU4d8bDSuremdstvRraptM8j4="
+        "CodeSha256": "E4ylt7MvLrvGXVHZ/83KytEMKZ3ScaIC5mZU7HXrnpk="
+      }
+    },
+    "UpdateNoteLambdaVersionHvv25zNSTvD3X6bEd4CJZIKANL4YFXYHZI5AAWo": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "UpdateNoteLambdaFunction"
+        },
+        "CodeSha256": "E4ylt7MvLrvGXVHZ/83KytEMKZ3ScaIC5mZU7HXrnpk="
       }
     },
     "ApiGatewayRestApi": {
@@ -211,6 +252,18 @@
           ]
         },
         "PathPart": "notes",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayResourceNotesIdVar": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Ref": "ApiGatewayResourceNotes"
+        },
+        "PathPart": "{id}",
         "RestApiId": {
           "Ref": "ApiGatewayRestApi"
         }
@@ -262,7 +315,53 @@
         "CreateNoteLambdaPermissionApiGateway"
       ]
     },
-    "ApiGatewayDeployment1683812442628": {
+    "ApiGatewayMethodNotesIdVarPut": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "PUT",
+        "RequestParameters": {},
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceNotesIdVar"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "UpdateNoteLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "MethodResponses": []
+      },
+      "DependsOn": [
+        "UpdateNoteLambdaPermissionApiGateway"
+      ]
+    },
+    "ApiGatewayDeployment1683813067824": {
       "Type": "AWS::ApiGateway::Deployment",
       "Properties": {
         "RestApiId": {
@@ -271,7 +370,8 @@
         "StageName": "dev"
       },
       "DependsOn": [
-        "ApiGatewayMethodNotesPost"
+        "ApiGatewayMethodNotesPost",
+        "ApiGatewayMethodNotesIdVarPut"
       ]
     },
     "CreateNoteLambdaPermissionApiGateway": {
@@ -280,6 +380,43 @@
         "FunctionName": {
           "Fn::GetAtt": [
             "CreateNoteLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "/*/*"
+            ]
+          ]
+        }
+      }
+    },
+    "UpdateNoteLambdaPermissionApiGateway": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "UpdateNoteLambdaFunction",
             "Arn"
           ]
         },
@@ -324,10 +461,19 @@
     "CreateNoteLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "CreateNoteLambdaVersion3zuZ5RSUjUwHrAbM5m1MbaOjPblQ57zgpWd7im76kBQ"
+        "Ref": "CreateNoteLambdaVersionuKEfwKUAF3m2JgzEcJVfmVVjSKUSelYkEo3GFxNMQ"
       },
       "Export": {
         "Name": "sls-notes-api-dev-CreateNoteLambdaFunctionQualifiedArn"
+      }
+    },
+    "UpdateNoteLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "UpdateNoteLambdaVersionHvv25zNSTvD3X6bEd4CJZIKANL4YFXYHZI5AAWo"
+      },
+      "Export": {
+        "Name": "sls-notes-api-dev-UpdateNoteLambdaFunctionQualifiedArn"
       }
     },
     "ServiceEndpoint": {
