@@ -42,3 +42,33 @@ module.exports.deleteNote = async (event) => {
     ),
   };
 };
+
+
+module.exports.getAllNote = async (event) => {
+  return {
+    statusCode: 200,
+    body: JSON.stringify(
+      {
+        message: `All Notes`,
+      },
+      null,
+      2
+    ),
+  };
+};
+
+
+
+module.exports.getNote = async (event) => {
+  let noteId = event.pathParameters.id;
+  return {
+    statusCode: 200,
+    body: JSON.stringify(
+      {
+        message: `Note with noteId: ${noteId}`,
+      },
+      null,
+      2
+    ),
+  };
+};
