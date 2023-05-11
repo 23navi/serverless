@@ -44,7 +44,7 @@ module.exports.deleteNote = async (event) => {
 };
 
 
-module.exports.getAllNote = async (event) => {
+module.exports.getAllNotes = async (event) => {
   return {
     statusCode: 200,
     body: JSON.stringify(
