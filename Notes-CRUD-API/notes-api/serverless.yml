@@ -34,6 +34,22 @@ functions:
           path: notes/{id}
 
 
+  getAllNotes:
+    handler: handler.getAllNotes
+    events:
+      - http:
+          method: get
+          path: notes
+  
+  
+  getNote:
+    handler: handler.getNote
+    events:
+      - http:
+          method: get
+          path: notes/{id}
+
+
 
 # you can add CloudFormation resource templates here
 #resources:
