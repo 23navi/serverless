@@ -1,0 +1,27 @@
+service: auction-service
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-south-1
+  memorySize: 256
+  stage: ${opt:stage, 'dev'}
+
+functions:
+  hello:
+    handler: src/handlers/hello.handler
+    events:
+      - http:
+          method: GET
+          path: /hello
+  createAuction:
+    handler: src/handlers/createAuction.handler
+    events:
+      - http:
+          method: GET
+          path: /auction
+
+custom:
+  bundle:
+    linting: false
