@@ -7,8 +7,9 @@
     "provider": {
       "name": "aws",
       "runtime": "nodejs18.x",
+      "region": "ap-south-1",
+      "memorySize": 256,
       "stage": "dev",
-      "region": "us-east-1",
       "versionFunctions": true,
       "compiledCloudFormationTemplate": {
         "AWSTemplateFormatVersion": "2010-09-09",
@@ -83,10 +84,16 @@
               }
             }
           },
-          "ApiLogGroup": {
+          "HelloLogGroup": {
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
-              "LogGroupName": "/aws/lambda/auction-service-dev-api"
+              "LogGroupName": "/aws/lambda/auction-service-dev-hello"
+            }
+          },
+          "CreateAuctionLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/auction-service-dev-createAuction"
             }
           },
           "IamRoleLambdaExecution": {
@@ -167,19 +174,19 @@
               }
             }
           },
-          "ApiLambdaFunction": {
+          "HelloLambdaFunction": {
             "Type": "AWS::Lambda::Function",
             "Properties": {
               "Code": {
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/auction-service/dev/1700334508008-2023-11-18T19:08:28.008Z/auction-service.zip"
+                "S3Key": "serverless/auction-service/dev/1700336479398-2023-11-18T19:41:19.398Z/auction-service.zip"
               },
-              "Handler": "index.handler",
+              "Handler": "src/handlers/hello.handler",
               "Runtime": "nodejs18.x",
-              "FunctionName": "auction-service-dev-api",
-              "MemorySize": 1024,
+              "FunctionName": "auction-service-dev-hello",
+              "MemorySize": 256,
               "Timeout": 6,
               "Role": {
                 "Fn::GetAtt": [
@@ -189,45 +196,207 @@
               }
             },
             "DependsOn": [
-              "ApiLogGroup"
+              "HelloLogGroup"
             ]
           },
-          "ApiLambdaVersion0se0jL5R7KjUbh7lJooCyD1hhTNtSNJkPcURtE7A8M": {
+          "CreateAuctionLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/auction-service/dev/1700336479398-2023-11-18T19:41:19.398Z/auction-service.zip"
+              },
+              "Handler": "src/handlers/createAuction.handler",
+              "Runtime": "nodejs18.x",
+              "FunctionName": "auction-service-dev-createAuction",
+              "MemorySize": 256,
+              "Timeout": 6,
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "CreateAuctionLogGroup"
+            ]
+          },
+          "HelloLambdaVersion8LSlja4PegfGfIzBDviLbM3Ctj9VJf72GhTPLGK7Ck": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
-                "Ref": "ApiLambdaFunction"
+                "Ref": "HelloLambdaFunction"
               },
-              "CodeSha256": "4YQ3Mv8BXl9YM5xmbGtPciA4k6pftY7i1JqvZMJys3M="
+              "CodeSha256": "BiYPalJgV2FfETg68Y5rB0xVBQSc+WneOY99VV8a3Hw="
             }
           },
-          "HttpApi": {
-            "Type": "AWS::ApiGatewayV2::Api",
+          "CreateAuctionLambdaVersionh42yoZeBF8TPA4imajaQYbc8YGfiqGqzSNWGgasL5k": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "CreateAuctionLambdaFunction"
+              },
+              "CodeSha256": "BiYPalJgV2FfETg68Y5rB0xVBQSc+WneOY99VV8a3Hw="
+            }
+          },
+          "ApiGatewayRestApi": {
+            "Type": "AWS::ApiGateway::RestApi",
             "Properties": {
               "Name": "dev-auction-service",
-              "ProtocolType": "HTTP"
+              "EndpointConfiguration": {
+                "Types": [
+                  "EDGE"
+                ]
+              },
+              "Policy": ""
             }
           },
-          "HttpApiStage": {
-            "Type": "AWS::ApiGatewayV2::Stage",
+          "ApiGatewayResourceHello": {
+            "Type": "AWS::ApiGateway::Resource",
             "Properties": {
-              "ApiId": {
-                "Ref": "HttpApi"
+              "ParentId": {
+                "Fn::GetAtt": [
+                  "ApiGatewayRestApi",
+                  "RootResourceId"
+                ]
               },
-              "StageName": "$default",
-              "AutoDeploy": true,
-              "DefaultRouteSettings": {
-                "DetailedMetricsEnabled": false
+              "PathPart": "hello",
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
               }
             }
           },
-          "ApiLambdaPermissionHttpApi": {
+          "ApiGatewayResourceAuction": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+              "ParentId": {
+                "Fn::GetAtt": [
+                  "ApiGatewayRestApi",
+                  "RootResourceId"
+                ]
+              },
+              "PathPart": "auction",
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              }
+            }
+          },
+          "ApiGatewayMethodHelloGet": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+              "HttpMethod": "GET",
+              "RequestParameters": {},
+              "ResourceId": {
+                "Ref": "ApiGatewayResourceHello"
+              },
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "ApiKeyRequired": false,
+              "AuthorizationType": "NONE",
+              "Integration": {
+                "IntegrationHttpMethod": "POST",
+                "Type": "AWS_PROXY",
+                "Uri": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":apigateway:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":lambda:path/2015-03-31/functions/",
+                      {
+                        "Fn::GetAtt": [
+                          "HelloLambdaFunction",
+                          "Arn"
+                        ]
+                      },
+                      "/invocations"
+                    ]
+                  ]
+                }
+              },
+              "MethodResponses": []
+            },
+            "DependsOn": [
+              "HelloLambdaPermissionApiGateway"
+            ]
+          },
+          "ApiGatewayMethodAuctionGet": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+              "HttpMethod": "GET",
+              "RequestParameters": {},
+              "ResourceId": {
+                "Ref": "ApiGatewayResourceAuction"
+              },
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "ApiKeyRequired": false,
+              "AuthorizationType": "NONE",
+              "Integration": {
+                "IntegrationHttpMethod": "POST",
+                "Type": "AWS_PROXY",
+                "Uri": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":apigateway:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":lambda:path/2015-03-31/functions/",
+                      {
+                        "Fn::GetAtt": [
+                          "CreateAuctionLambdaFunction",
+                          "Arn"
+                        ]
+                      },
+                      "/invocations"
+                    ]
+                  ]
+                }
+              },
+              "MethodResponses": []
+            },
+            "DependsOn": [
+              "CreateAuctionLambdaPermissionApiGateway"
+            ]
+          },
+          "ApiGatewayDeployment1700336477513": {
+            "Type": "AWS::ApiGateway::Deployment",
+            "Properties": {
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "StageName": "dev"
+            },
+            "DependsOn": [
+              "ApiGatewayMethodHelloGet",
+              "ApiGatewayMethodAuctionGet"
+            ]
+          },
+          "HelloLambdaPermissionApiGateway": {
             "Type": "AWS::Lambda::Permission",
             "Properties": {
               "FunctionName": {
                 "Fn::GetAtt": [
-                  "ApiLambdaFunction",
+                  "HelloLambdaFunction",
                   "Arn"
                 ]
               },
@@ -251,48 +420,50 @@
                     },
                     ":",
                     {
-                      "Ref": "HttpApi"
+                      "Ref": "ApiGatewayRestApi"
                     },
-                    "/*"
+                    "/*/*"
                   ]
                 ]
               }
             }
           },
-          "HttpApiIntegrationApi": {
-            "Type": "AWS::ApiGatewayV2::Integration",
+          "CreateAuctionLambdaPermissionApiGateway": {
+            "Type": "AWS::Lambda::Permission",
             "Properties": {
-              "ApiId": {
-                "Ref": "HttpApi"
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "CreateAuctionLambdaFunction",
+                  "Arn"
+                ]
               },
-              "IntegrationType": "AWS_PROXY",
-              "IntegrationUri": {
-                "$ref": "$[\"service\"][\"provider\"][\"compiledCloudFormationTemplate\"][\"Resources\"][\"ApiLambdaPermissionHttpApi\"][\"Properties\"][\"FunctionName\"]"
-              },
-              "PayloadFormatVersion": "2.0",
-              "TimeoutInMillis": 30000
-            }
-          },
-          "HttpApiRouteGet": {
-            "Type": "AWS::ApiGatewayV2::Route",
-            "Properties": {
-              "ApiId": {
-                "Ref": "HttpApi"
-              },
-              "RouteKey": "GET /",
-              "Target": {
+              "Action": "lambda:InvokeFunction",
+              "Principal": "apigateway.amazonaws.com",
+              "SourceArn": {
                 "Fn::Join": [
-                  "/",
+                  "",
                   [
-                    "integrations",
+                    "arn:",
                     {
-                      "Ref": "HttpApiIntegrationApi"
-                    }
+                      "Ref": "AWS::Partition"
+                    },
+                    ":execute-api:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":",
+                    {
+                      "Ref": "ApiGatewayRestApi"
+                    },
+                    "/*/*"
                   ]
                 ]
               }
-            },
-            "DependsOn": "HttpApiIntegrationApi"
+            }
           }
         },
         "Outputs": {
@@ -304,33 +475,33 @@
               "Name": "sls-auction-service-dev-ServerlessDeploymentBucketName"
             }
           },
-          "ApiLambdaFunctionQualifiedArn": {
+          "HelloLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "ApiLambdaVersion0se0jL5R7KjUbh7lJooCyD1hhTNtSNJkPcURtE7A8M"
+              "Ref": "HelloLambdaVersion8LSlja4PegfGfIzBDviLbM3Ctj9VJf72GhTPLGK7Ck"
             },
             "Export": {
-              "Name": "sls-auction-service-dev-ApiLambdaFunctionQualifiedArn"
+              "Name": "sls-auction-service-dev-HelloLambdaFunctionQualifiedArn"
             }
           },
-          "HttpApiId": {
-            "Description": "Id of the HTTP API",
+          "CreateAuctionLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "HttpApi"
+              "Ref": "CreateAuctionLambdaVersionh42yoZeBF8TPA4imajaQYbc8YGfiqGqzSNWGgasL5k"
             },
             "Export": {
-              "Name": "sls-auction-service-dev-HttpApiId"
+              "Name": "sls-auction-service-dev-CreateAuctionLambdaFunctionQualifiedArn"
             }
           },
-          "HttpApiUrl": {
-            "Description": "URL of the HTTP API",
+          "ServiceEndpoint": {
+            "Description": "URL of the service endpoint",
             "Value": {
               "Fn::Join": [
                 "",
                 [
                   "https://",
                   {
-                    "Ref": "HttpApi"
+                    "Ref": "ApiGatewayRestApi"
                   },
                   ".execute-api.",
                   {
@@ -339,12 +510,13 @@
                   ".",
                   {
                     "Ref": "AWS::URLSuffix"
-                  }
+                  },
+                  "/dev"
                 ]
               ]
             },
             "Export": {
-              "Name": "sls-auction-service-dev-HttpApiUrl"
+              "Name": "sls-auction-service-dev-ServiceEndpoint"
             }
           }
         }
@@ -433,27 +605,50 @@
       },
       "vpc": {}
     },
+    "custom": {
+      "bundle": {
+        "linting": false
+      }
+    },
     "pluginsData": {},
     "functions": {
-      "api": {
-        "handler": "index.handler",
+      "hello": {
+        "handler": "src/handlers/hello.handler",
         "events": [
           {
-            "httpApi": {
-              "path": "/",
-              "method": "get"
-            },
-            "resolvedMethod": "GET",
-            "resolvedPath": "/"
+            "http": {
+              "method": "get",
+              "path": "hello",
+              "integration": "AWS_PROXY"
+            }
           }
         ],
-        "name": "auction-service-dev-api",
+        "name": "auction-service-dev-hello",
         "package": {},
-        "memory": 1024,
+        "memory": 256,
         "timeout": 6,
         "runtime": "nodejs18.x",
         "vpc": {},
-        "versionLogicalId": "ApiLambdaVersion0se0jL5R7KjUbh7lJooCyD1hhTNtSNJkPcURtE7A8M"
+        "versionLogicalId": "HelloLambdaVersion8LSlja4PegfGfIzBDviLbM3Ctj9VJf72GhTPLGK7Ck"
+      },
+      "createAuction": {
+        "handler": "src/handlers/createAuction.handler",
+        "events": [
+          {
+            "http": {
+              "method": "get",
+              "path": "auction",
+              "integration": "AWS_PROXY"
+            }
+          }
+        ],
+        "name": "auction-service-dev-createAuction",
+        "package": {},
+        "memory": 256,
+        "timeout": 6,
+        "runtime": "nodejs18.x",
+        "vpc": {},
+        "versionLogicalId": "CreateAuctionLambdaVersionh42yoZeBF8TPA4imajaQYbc8YGfiqGqzSNWGgasL5k"
       }
     },
     "configValidationMode": "warn",
@@ -466,6 +661,9 @@
       },
       "functions": {
         "$ref": "$[\"service\"][\"functions\"]"
+      },
+      "custom": {
+        "$ref": "$[\"service\"][\"custom\"]"
       }
     },
     "layers": {},
@@ -473,7 +671,7 @@
     "artifact": "/Users/navi/Desktop/DEVELOPMENT/Courses/Serverless/serverless-auction/auction-service/.serverless/auction-service.zip"
   },
   "package": {
-    "artifactDirectoryName": "serverless/auction-service/dev/1700334508008-2023-11-18T19:08:28.008Z",
+    "artifactDirectoryName": "serverless/auction-service/dev/1700336479398-2023-11-18T19:41:19.398Z",
     "artifact": "auction-service.zip"
   }
 }
