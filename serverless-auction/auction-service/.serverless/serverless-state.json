@@ -96,6 +96,12 @@
               "LogGroupName": "/aws/lambda/auction-service-dev-createAuction"
             }
           },
+          "FetchAllAuctionsLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/auction-service-dev-fetchAllAuctions"
+            }
+          },
           "IamRoleLambdaExecution": {
             "Type": "AWS::IAM::Role",
             "Properties": {
@@ -181,7 +187,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/auction-service/dev/1700336479398-2023-11-18T19:41:19.398Z/auction-service.zip"
+                "S3Key": "serverless/auction-service/dev/1700420988125-2023-11-19T19:09:48.125Z/auction-service.zip"
               },
               "Handler": "src/handlers/hello.handler",
               "Runtime": "nodejs18.x",
@@ -206,7 +212,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/auction-service/dev/1700336479398-2023-11-18T19:41:19.398Z/auction-service.zip"
+                "S3Key": "serverless/auction-service/dev/1700420988125-2023-11-19T19:09:48.125Z/auction-service.zip"
               },
               "Handler": "src/handlers/createAuction.handler",
               "Runtime": "nodejs18.x",
@@ -224,24 +230,59 @@
               "CreateAuctionLogGroup"
             ]
           },
-          "HelloLambdaVersion8LSlja4PegfGfIzBDviLbM3Ctj9VJf72GhTPLGK7Ck": {
+          "FetchAllAuctionsLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/auction-service/dev/1700420988125-2023-11-19T19:09:48.125Z/auction-service.zip"
+              },
+              "Handler": "src/handlers/fetchAllAuctions.handler",
+              "Runtime": "nodejs18.x",
+              "FunctionName": "auction-service-dev-fetchAllAuctions",
+              "MemorySize": 256,
+              "Timeout": 6,
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "FetchAllAuctionsLogGroup"
+            ]
+          },
+          "HelloLambdaVersionzQcvu9S4MCRL1ilgbHLSkYCG5GoSRrqy3ukc5qek": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "HelloLambdaFunction"
               },
-              "CodeSha256": "BiYPalJgV2FfETg68Y5rB0xVBQSc+WneOY99VV8a3Hw="
+              "CodeSha256": "ZjcP/GOiymUyr5Y1qrGcsNIubP1bNtDdu4sKne51+OA="
             }
           },
-          "CreateAuctionLambdaVersionh42yoZeBF8TPA4imajaQYbc8YGfiqGqzSNWGgasL5k": {
+          "CreateAuctionLambdaVersionfU7JbDIbrEyGzf3LItubY4poVa00b13tCc7ROUialM": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "CreateAuctionLambdaFunction"
               },
-              "CodeSha256": "BiYPalJgV2FfETg68Y5rB0xVBQSc+WneOY99VV8a3Hw="
+              "CodeSha256": "ZjcP/GOiymUyr5Y1qrGcsNIubP1bNtDdu4sKne51+OA="
+            }
+          },
+          "FetchAllAuctionsLambdaVersionyh47Xqp6U8dRDnITP8N4wRIm3bJ6amjptzUHIsj9Nk": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "FetchAllAuctionsLambdaFunction"
+              },
+              "CodeSha256": "ZjcP/GOiymUyr5Y1qrGcsNIubP1bNtDdu4sKne51+OA="
             }
           },
           "ApiGatewayRestApi": {
@@ -271,7 +312,7 @@
               }
             }
           },
-          "ApiGatewayResourceAuction": {
+          "ApiGatewayResourceAuctions": {
             "Type": "AWS::ApiGateway::Resource",
             "Properties": {
               "ParentId": {
@@ -280,7 +321,7 @@
                   "RootResourceId"
                 ]
               },
-              "PathPart": "auction",
+              "PathPart": "auctions",
               "RestApiId": {
                 "Ref": "ApiGatewayRestApi"
               }
@@ -332,13 +373,13 @@
               "HelloLambdaPermissionApiGateway"
             ]
           },
-          "ApiGatewayMethodAuctionGet": {
+          "ApiGatewayMethodAuctionsPost": {
             "Type": "AWS::ApiGateway::Method",
             "Properties": {
-              "HttpMethod": "GET",
+              "HttpMethod": "POST",
               "RequestParameters": {},
               "ResourceId": {
-                "Ref": "ApiGatewayResourceAuction"
+                "Ref": "ApiGatewayResourceAuctions"
               },
               "RestApiId": {
                 "Ref": "ApiGatewayRestApi"
@@ -378,7 +419,53 @@
               "CreateAuctionLambdaPermissionApiGateway"
             ]
           },
-          "ApiGatewayDeployment1700336477513": {
+          "ApiGatewayMethodAuctionsGet": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+              "HttpMethod": "GET",
+              "RequestParameters": {},
+              "ResourceId": {
+                "Ref": "ApiGatewayResourceAuctions"
+              },
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "ApiKeyRequired": false,
+              "AuthorizationType": "NONE",
+              "Integration": {
+                "IntegrationHttpMethod": "POST",
+                "Type": "AWS_PROXY",
+                "Uri": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":apigateway:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":lambda:path/2015-03-31/functions/",
+                      {
+                        "Fn::GetAtt": [
+                          "FetchAllAuctionsLambdaFunction",
+                          "Arn"
+                        ]
+                      },
+                      "/invocations"
+                    ]
+                  ]
+                }
+              },
+              "MethodResponses": []
+            },
+            "DependsOn": [
+              "FetchAllAuctionsLambdaPermissionApiGateway"
+            ]
+          },
+          "ApiGatewayDeployment1700420986213": {
             "Type": "AWS::ApiGateway::Deployment",
             "Properties": {
               "RestApiId": {
@@ -388,7 +475,8 @@
             },
             "DependsOn": [
               "ApiGatewayMethodHelloGet",
-              "ApiGatewayMethodAuctionGet"
+              "ApiGatewayMethodAuctionsPost",
+              "ApiGatewayMethodAuctionsGet"
             ]
           },
           "HelloLambdaPermissionApiGateway": {
@@ -464,6 +552,43 @@
                 ]
               }
             }
+          },
+          "FetchAllAuctionsLambdaPermissionApiGateway": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "FetchAllAuctionsLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "apigateway.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":execute-api:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":",
+                    {
+                      "Ref": "ApiGatewayRestApi"
+                    },
+                    "/*/*"
+                  ]
+                ]
+              }
+            }
           }
         },
         "Outputs": {
@@ -478,7 +603,7 @@
           "HelloLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "HelloLambdaVersion8LSlja4PegfGfIzBDviLbM3Ctj9VJf72GhTPLGK7Ck"
+              "Ref": "HelloLambdaVersionzQcvu9S4MCRL1ilgbHLSkYCG5GoSRrqy3ukc5qek"
             },
             "Export": {
               "Name": "sls-auction-service-dev-HelloLambdaFunctionQualifiedArn"
@@ -487,10 +612,19 @@
           "CreateAuctionLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "CreateAuctionLambdaVersionh42yoZeBF8TPA4imajaQYbc8YGfiqGqzSNWGgasL5k"
+              "Ref": "CreateAuctionLambdaVersionfU7JbDIbrEyGzf3LItubY4poVa00b13tCc7ROUialM"
             },
             "Export": {
               "Name": "sls-auction-service-dev-CreateAuctionLambdaFunctionQualifiedArn"
+            }
+          },
+          "FetchAllAuctionsLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "FetchAllAuctionsLambdaVersionyh47Xqp6U8dRDnITP8N4wRIm3bJ6amjptzUHIsj9Nk"
+            },
+            "Export": {
+              "Name": "sls-auction-service-dev-FetchAllAuctionsLambdaFunctionQualifiedArn"
             }
           },
           "ServiceEndpoint": {
@@ -629,15 +763,15 @@
         "timeout": 6,
         "runtime": "nodejs18.x",
         "vpc": {},
-        "versionLogicalId": "HelloLambdaVersion8LSlja4PegfGfIzBDviLbM3Ctj9VJf72GhTPLGK7Ck"
+        "versionLogicalId": "HelloLambdaVersionzQcvu9S4MCRL1ilgbHLSkYCG5GoSRrqy3ukc5qek"
       },
       "createAuction": {
         "handler": "src/handlers/createAuction.handler",
         "events": [
           {
             "http": {
-              "method": "get",
-              "path": "auction",
+              "method": "post",
+              "path": "auctions",
               "integration": "AWS_PROXY"
             }
           }
@@ -648,7 +782,26 @@
         "timeout": 6,
         "runtime": "nodejs18.x",
         "vpc": {},
-        "versionLogicalId": "CreateAuctionLambdaVersionh42yoZeBF8TPA4imajaQYbc8YGfiqGqzSNWGgasL5k"
+        "versionLogicalId": "CreateAuctionLambdaVersionfU7JbDIbrEyGzf3LItubY4poVa00b13tCc7ROUialM"
+      },
+      "fetchAllAuctions": {
+        "handler": "src/handlers/fetchAllAuctions.handler",
+        "events": [
+          {
+            "http": {
+              "method": "get",
+              "path": "auctions",
+              "integration": "AWS_PROXY"
+            }
+          }
+        ],
+        "name": "auction-service-dev-fetchAllAuctions",
+        "package": {},
+        "memory": 256,
+        "timeout": 6,
+        "runtime": "nodejs18.x",
+        "vpc": {},
+        "versionLogicalId": "FetchAllAuctionsLambdaVersionyh47Xqp6U8dRDnITP8N4wRIm3bJ6amjptzUHIsj9Nk"
       }
     },
     "configValidationMode": "warn",
@@ -671,7 +824,7 @@
     "artifact": "/Users/navi/Desktop/DEVELOPMENT/Courses/Serverless/serverless-auction/auction-service/.serverless/auction-service.zip"
   },
   "package": {
-    "artifactDirectoryName": "serverless/auction-service/dev/1700336479398-2023-11-18T19:41:19.398Z",
+    "artifactDirectoryName": "serverless/auction-service/dev/1700420988125-2023-11-19T19:09:48.125Z",
     "artifact": "auction-service.zip"
   }
 }

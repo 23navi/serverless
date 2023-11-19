@@ -1,7 +1,9 @@
 async function createAuction(event, context) {
+  const body = JSON.parse(event.body);
+
   return {
-    statusCode: 200,
-    body: JSON.stringify({ event }),
+    statusCode: 201,
+    body: JSON.stringify({ body }),
   };
 }
 
